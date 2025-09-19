@@ -1,3 +1,7 @@
+# ===========================================
+# Satoshi Faucet Bot - Chrome Extension
+# ===========================================
+
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -9,6 +13,9 @@ dist/
 build/
 *.zip
 *.tar.gz
+*.crx
+*.pem
+*.key
 
 # IDE and Editor files
 .vscode/
@@ -25,87 +32,48 @@ build/
 .Trashes
 ehthumbs.db
 Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Logs
+# Logs and runtime data
 logs/
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Runtime data
 pids/
 *.pid
 *.seed
 *.pid.lock
 
-# Coverage directory used by tools like istanbul
+# Coverage and testing
 coverage/
 *.lcov
-
-# nyc test coverage
 .nyc_output
 
-# Dependency directories
-jspm_packages/
-
-# Optional npm cache directory
+# Cache directories
+.cache
+.parcel-cache
 .npm
-
-# Optional eslint cache
 .eslintcache
-
-# Optional REPL history
 .node_repl_history
+.fusebox/
+.dynamodb/
+.tern-port
 
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# dotenv environment variables file
+# Environment files
 .env
 .env.test
 .env.production
 
-# parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
+# Framework specific
+.next/
+.nuxt/
+.vuepress/dist/
 .serverless/
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
-
-# Chrome Extension specific
-*.crx
-*.pem
-*.key
 
 # Temporary files
 tmp/
 temp/
 *.tmp
 *.temp
-
-# Backup files
 *.bak
 *.backup
 *.old
@@ -115,8 +83,6 @@ temp/
 *.suo
 *.userosscache
 *.sln.docstates
-
-# User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
 # Build results
@@ -131,58 +97,26 @@ bld/
 [Oo]bj/
 [Ll]og/
 
-# Visual Studio 2015/2017 cache/options directory
+# Visual Studio
 .vs/
-
-# Visual Studio Code
-.vscode/
-
-# JetBrains IDEs
-.idea/
-
-# Local History for Visual Studio Code
 .history/
 
-# Windows image file caches
-Thumbs.db
-ehthumbs.db
-
-# Folder config file
-Desktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
+# Windows
 *.cab
 *.msi
 *.msm
 *.msp
-
-# Windows shortcuts
 *.lnk
 
 # macOS
-.DS_Store
 .AppleDouble
 .LSOverride
-
-# Icon must end with two \r
-Icon
-
-# Thumbnails
-._*
-
-# Files that might appear in the root of a volume
 .DocumentRevisions-V100
 .fseventsd
-.Spotlight-V100
 .TemporaryItems
 .Trashes
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
-
-# Directories potentially created on remote AFP share
 .AppleDB
 .AppleDesktop
 Network Trash Folder
@@ -190,27 +124,19 @@ Temporary Items
 .apdisk
 
 # Linux
-*~
-
-# temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*
-
-# KDE directory preferences
 .directory
-
-# Linux trash folder which might appear on any partition or disk
 .Trash-*
-
-# .nfs files are created when an open file is removed but is still being accessed
 .nfs*
 
 # Project specific
 screenshots/
 !assets/screenshots/
-logs/
 exports/
 
-# Version management (keep these files)
+# Version management (KEEP THESE FILES)
 !version.json
 !scripts/update-version.js
 !docs/VERSIONING.md
+!package.json
+!CHANGELOG.md
