@@ -1,26 +1,31 @@
 {
   "manifest_version": 3,
-  "name": "Satoshi Faucet Bot",
-  "version": "1.0.0",
-  "description": "Automated bot for Satoshi Faucet with full automation",
+  "name": "Satoshi Faucet Bot - Chrome Extension",
+  "version": "2.0.2",
+  "description": "🚀 Fully automated bot for Satoshi Faucet with advanced features including faucet claims, shortlinks, and daily challenges. AI-powered emoji captcha solving with 22+ cryptocurrency support.",
+  "author": "Satoshi Faucet Bot Team",
+  "homepage_url": "https://github.com/ryustore69/Stshi-FCT",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
-    "notifications"
+    "notifications",
+    "alarms",
+    "tabs"
   ],
   "host_permissions": [
     "https://satoshifaucet.io/*"
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Satoshi Faucet Bot"
+    "default_title": "Satoshi Faucet Bot - Start earning cryptocurrency automatically!"
   },
   "content_scripts": [
     {
       "matches": ["https://satoshifaucet.io/*"],
       "js": ["content.js"],
-      "run_at": "document_end"
+      "run_at": "document_end",
+      "all_frames": false
     }
   ],
   "background": {
@@ -28,8 +33,12 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["injected.js"],
+      "resources": ["assets/*"],
       "matches": ["https://satoshifaucet.io/*"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "minimum_chrome_version": "88"
 }

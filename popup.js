@@ -9,6 +9,7 @@ class FaucetBotPopup {
         this.initializeElements();
         this.setupEventListeners();
         this.loadStats();
+        this.loadVersion();
     }
     
     initializeElements() {
@@ -22,12 +23,17 @@ class FaucetBotPopup {
         this.shortlinkCountEl = document.getElementById('shortlinkCount');
         this.challengeCountEl = document.getElementById('challengeCount');
         this.logElement = document.getElementById('log');
+        this.versionBadge = document.getElementById('versionBadge');
+        this.checkUpdateBtn = document.getElementById('checkUpdateBtn');
+        this.updateStatus = document.getElementById('updateStatus');
         
         // Settings elements
         this.settingsModal = document.getElementById('settingsModal');
         this.enableNotifications = document.getElementById('enableNotifications');
         this.detailedLogs = document.getElementById('detailedLogs');
         this.autoSaveLogs = document.getElementById('autoSaveLogs');
+        this.enableChallenge = document.getElementById('enableChallenge');
+        this.saveSettingsBtn = document.getElementById('saveSettings');
         this.exportLogsBtn = document.getElementById('exportLogs');
         this.clearLogsBtn = document.getElementById('clearLogs');
     }
@@ -36,6 +42,7 @@ class FaucetBotPopup {
         this.startBtn.addEventListener('click', () => this.start());
         this.stopBtn.addEventListener('click', () => this.stop());
         this.settingsBtn.addEventListener('click', () => this.openSettings());
+        this.checkUpdateBtn.addEventListener('click', () => this.checkForUpdate());
         
         // Save currency when changed
         this.currencySelect.addEventListener('change', () => {
@@ -45,9 +52,7 @@ class FaucetBotPopup {
         
         // Settings event listeners
         document.querySelector('.close').addEventListener('click', () => this.closeSettings());
-        this.enableNotifications.addEventListener('change', () => this.saveSettings());
-        this.detailedLogs.addEventListener('change', () => this.saveSettings());
-        this.autoSaveLogs.addEventListener('change', () => this.saveSettings());
+        this.saveSettingsBtn.addEventListener('click', () => this.saveSettings());
         this.exportLogsBtn.addEventListener('click', () => this.exportLogs());
         this.clearLogsBtn.addEventListener('click', () => this.clearLogs());
         
@@ -87,6 +92,7 @@ class FaucetBotPopup {
                 this.enableNotifications.checked = stats.settings.enableNotifications !== false;
                 this.detailedLogs.checked = stats.settings.detailedLogs || false;
                 this.autoSaveLogs.checked = stats.settings.autoSaveLogs || false;
+                this.enableChallenge.checked = stats.settings.enableChallenge !== false;
             }
             
             // Sync with content script to get real-time status
@@ -98,6 +104,126 @@ class FaucetBotPopup {
             }
         } catch (error) {
             this.log('Could not load stats', 'error');
+        }
+    }
+    
+    async loadVersion() {
+        try {
+            // Get version from manifest
+            const manifest = chrome.runtime.getManifest();
+            const version = manifest.version;
+            
+            if (this.versionBadge) {
+                this.versionBadge.textContent = `v${version}`;
+            }
+            
+            this.log(`Extension version: ${version}`, 'info');
+        } catch (error) {
+            console.error('Could not load version:', error);
+            if (this.versionBadge) {
+                this.versionBadge.textContent = 'v2.0.0'; // fallback
+            }
+        }
+    }
+    
+    async checkForUpdate() {
+        try {
+            this.checkUpdateBtn.disabled = true;
+            this.checkUpdateBtn.textContent = '🔄 CHECKING...';
+            this.showUpdateStatus('Checking for updates...', 'info');
+            
+            // Get current version
+            const manifest = chrome.runtime.getManifest();
+            const currentVersion = manifest.version;
+            
+            // Check GitHub API for latest release
+            const response = await fetch('https://api.github.com/repos/ryustore69/Stshi-FCT/releases/latest');
+            
+            if (!response.ok) {
+                if (response.status === 404) {
+                    throw new Error('No releases found.');
+                }
+                throw new Error(`GitHub API error: ${response.status}`);
+            }
+            
+            const releaseData = await response.json();
+            const latestVersion = releaseData.tag_name.replace('v', ''); // Remove 'v' prefix
+            
+            this.log(`Current version: ${currentVersion}, Latest version: ${latestVersion}`, 'info');
+            
+            if (this.compareVersions(latestVersion, currentVersion) > 0) {
+                // Update available
+                this.showUpdateStatus(`Update available: v${latestVersion}`, 'info');
+                this.checkUpdateBtn.textContent = '⬇️ DOWNLOAD UPDATE';
+                this.checkUpdateBtn.onclick = () => this.downloadUpdate(releaseData.html_url);
+                this.log(`Update available: v${latestVersion}`, 'info');
+            } else {
+                // Already up to date
+                this.showUpdateStatus('You are using the latest version!', 'success');
+                this.checkUpdateBtn.textContent = '✅ UP TO DATE';
+                this.log('Extension is up to date', 'info');
+            }
+            
+        } catch (error) {
+            console.error('Update check failed:', error);
+            
+            // Handle specific error cases
+            if (error.message.includes('No releases found')) {
+                this.showUpdateStatus('No releases available yet. Check GitHub for updates.', 'info');
+                this.checkUpdateBtn.textContent = '🌐 VISIT GITHUB';
+                this.checkUpdateBtn.onclick = () => this.visitGitHub();
+            } else {
+                this.showUpdateStatus('Failed to check for updates', 'error');
+                this.checkUpdateBtn.textContent = '🔄 CHECK FOR UPDATE';
+            }
+            
+            this.log(`Update check failed: ${error.message}`, 'error');
+        } finally {
+            this.checkUpdateBtn.disabled = false;
+        }
+    }
+    
+    compareVersions(version1, version2) {
+        const v1parts = version1.split('.').map(Number);
+        const v2parts = version2.split('.').map(Number);
+        
+        for (let i = 0; i < Math.max(v1parts.length, v2parts.length); i++) {
+            const v1part = v1parts[i] || 0;
+            const v2part = v2parts[i] || 0;
+            
+            if (v1part > v2part) return 1;
+            if (v1part < v2part) return -1;
+        }
+        
+        return 0;
+    }
+    
+    downloadUpdate(downloadUrl) {
+        // Open download page in new tab
+        chrome.tabs.create({ url: downloadUrl });
+        this.showUpdateStatus('Download page opened in new tab', 'info');
+        this.log('Download page opened', 'info');
+    }
+    
+    visitGitHub() {
+        // Open GitHub repository in new tab
+        chrome.tabs.create({ url: 'https://github.com/ryustore69/Stshi-FCT' });
+        this.showUpdateStatus('GitHub repository opened in new tab', 'info');
+        this.log('GitHub repository opened', 'info');
+    }
+    
+    showUpdateStatus(message, type) {
+        if (this.updateStatus) {
+            this.updateStatus.textContent = message;
+            this.updateStatus.className = `update-status ${type}`;
+            this.updateStatus.style.display = 'block';
+            
+            // Auto-hide after 5 seconds for success/info messages
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    this.updateStatus.style.display = 'none';
+                }, 5000);
+            }
         }
     }
     
@@ -146,7 +272,11 @@ class FaucetBotPopup {
         logEntry.textContent = `[${timestamp}] ${message}`;
         
         this.logElement.appendChild(logEntry);
-        this.logElement.scrollTop = this.logElement.scrollHeight;
+        
+        // Force scroll to bottom with a small delay to ensure DOM is updated
+        setTimeout(() => {
+            this.logElement.scrollTop = this.logElement.scrollHeight;
+        }, 10);
         
         // Keep only last 50 log entries
         while (this.logElement.children.length > 50) {
@@ -336,22 +466,105 @@ class FaucetBotPopup {
     
     // Settings methods
     openSettings() {
-        this.settingsModal.style.display = 'block';
+        this.settingsModal.classList.add('show');
+        // Add body scroll lock
+        document.body.style.overflow = 'hidden';
     }
     
     closeSettings() {
-        this.settingsModal.style.display = 'none';
+        this.settingsModal.classList.remove('show');
+        // Remove body scroll lock
+        document.body.style.overflow = 'auto';
     }
     
     async saveSettings() {
-        const settings = {
-            enableNotifications: this.enableNotifications.checked,
-            detailedLogs: this.detailedLogs.checked,
-            autoSaveLogs: this.autoSaveLogs.checked
-        };
+        try {
+            const settings = {
+                enableNotifications: this.enableNotifications.checked,
+                detailedLogs: this.detailedLogs.checked,
+                autoSaveLogs: this.autoSaveLogs.checked,
+                enableChallenge: this.enableChallenge.checked
+            };
+            
+            await chrome.storage.local.set({ settings });
+            this.log('Settings saved', 'info');
+            
+            // Send settings to content script with retry mechanism
+            const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+            let contentScriptSuccess = false;
+            
+            if (tab.url.includes('satoshifaucet.io')) {
+                // Try to send settings with retry mechanism and timeout
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        // Add timeout to prevent hanging
+                        const timeoutPromise = new Promise((_, reject) => 
+                            setTimeout(() => reject(new Error('Timeout')), 2000)
+                        );
+                        
+                        const messagePromise = chrome.tabs.sendMessage(tab.id, {
+                            action: 'updateSettings',
+                            settings: settings
+                        });
+                        
+                        await Promise.race([messagePromise, timeoutPromise]);
+                        this.log('Settings sent to content script successfully', 'info');
+                        contentScriptSuccess = true;
+                        break;
+                    } catch (error) {
+                        this.log(`Attempt ${attempt}/3: Could not send settings to content script (${error.message})`, 'warning');
+                        if (attempt < 3) {
+                            // Wait 2 seconds before retry
+                            await new Promise(resolve => setTimeout(resolve, 2000));
+                        }
+                    }
+                }
+            } else {
+                contentScriptSuccess = true; // No content script needed if not on faucet page
+                this.log('Not on faucet page, settings will sync when bot starts', 'info');
+            }
+            
+            // Show success feedback
+            if (contentScriptSuccess) {
+                this.showFeedback('✅ Settings saved successfully!', 'success');
+            } else {
+                this.showFeedback('⚠️ Settings saved but failed to sync with bot', 'warning');
+            }
+            
+        } catch (error) {
+            this.log('Failed to save settings', 'error');
+            this.showFeedback('❌ Failed to save settings', 'error');
+        }
+    }
+    
+    showFeedback(message, type = 'info') {
+        // Remove existing toast if any
+        const existingToast = document.querySelector('.feedback-toast');
+        if (existingToast) {
+            existingToast.remove();
+        }
         
-        await chrome.storage.local.set({ settings });
-        this.log('Settings saved', 'info');
+        // Create new toast
+        const toast = document.createElement('div');
+        toast.className = `feedback-toast ${type}`;
+        toast.textContent = message;
+        
+        document.body.appendChild(toast);
+        
+        // Show toast
+        setTimeout(() => {
+            toast.classList.add('show');
+        }, 100);
+        
+        // Hide toast after 3 seconds
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 3000);
     }
     
     async exportLogs() {
@@ -408,6 +621,10 @@ document.addEventListener('visibilitychange', () => {
     }
 });
 
+// Throttle real-time updates to reduce spam
+let lastUpdateTime = 0;
+const UPDATE_THROTTLE = 5000; // 5 seconds
+
 // Listen for messages from content script and background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'globalStatsUpdate') {
@@ -422,8 +639,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         bot.startBtn.disabled = bot.isRunning;
         bot.stopBtn.disabled = !bot.isRunning;
         
-        const lastUpdated = new Date(message.lastUpdated).toLocaleTimeString();
-        bot.log(`Real-time update: ${bot.completedCount} completed, ${bot.failedCount} failed, running: ${bot.isRunning} (${lastUpdated})`, 'info');
+        // Only log real-time updates occasionally to reduce spam
+        const now = Date.now();
+        if (now - lastUpdateTime > UPDATE_THROTTLE) {
+            const lastUpdated = new Date(message.lastUpdated).toLocaleTimeString();
+            bot.log(`Real-time update: ${bot.completedCount} completed, ${bot.failedCount} failed, running: ${bot.isRunning} (${lastUpdated})`, 'info');
+            lastUpdateTime = now;
+        }
     } else {
         bot.handleMessage(message);
     }

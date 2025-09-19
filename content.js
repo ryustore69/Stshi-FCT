@@ -10,9 +10,11 @@ class FaucetBotContent {
         this.lastPageUrl = window.location.href;
         this.shortlinkCount = 0;
         this.maxFaucetBeforeShortlink = 30;
+        this.maxShortlinksBeforeChallenge = 20;
         this.challengeCount = 0;
         this.lastChallengeCheck = 0;
         this.challengeCheckInterval = 5 * 60 * 1000; // Check every 5 minutes
+        this.challengeEnabled = true; // Can be controlled from settings
         
         // Enhanced emoji mapping from your 6.0.js
         this.emojiMap = {
@@ -50,6 +52,9 @@ class FaucetBotContent {
                         challengeCount: this.challengeCount,
                         isRunning: this.isRunning
                     });
+                    break;
+                case 'updateSettings':
+                    this.updateSettings(message.settings);
                     break;
             }
         });
@@ -90,13 +95,14 @@ class FaucetBotContent {
             // Always check if bot should be running from storage
             this.loadStats().then(() => {
                 if (this.isRunning && !this.isProcessing) {
-                    this.log('Checking for new content...', 'info');
                     this.runTask();
                 } else if (this.isRunning && this.isProcessing) {
-                    this.log('Bot is processing, waiting...', 'info');
-                } else if (!this.isRunning) {
-                    this.log('Bot not running, skipping check', 'info');
+                    // Only log processing status occasionally to reduce spam
+                    if (Math.random() < 0.1) { // 10% chance to log
+                        this.log('Bot is processing, waiting...', 'info');
+                    }
                 }
+                // Remove the "Bot not running" log to reduce spam
             });
         }, 3000);
         
@@ -120,8 +126,10 @@ class FaucetBotContent {
             // Always check if bot should be running from storage
             this.loadStats().then(() => {
                 if (this.isRunning) {
-                    this.log('Emergency check: Bot status', 'info');
-                    this.log(`isRunning: ${this.isRunning}, isProcessing: ${this.isProcessing}`, 'info');
+                    // Only log emergency check occasionally to reduce spam
+                    if (Math.random() < 0.05) { // 5% chance to log
+                        this.log('Emergency check: Bot status', 'info');
+                    }
                     
                     // If bot is stuck in processing state for too long, force reset
                     if (this.isProcessing) {
@@ -129,22 +137,27 @@ class FaucetBotContent {
                         this.isProcessing = false;
                         setTimeout(() => this.runTask(), 2000);
                     }
-                } else {
-                    this.log('Emergency check: Bot not running in storage', 'warning');
                 }
+                // Remove the "Bot not running in storage" log to reduce spam
             });
         }, 10000);
     }
     
     async loadStats() {
         try {
-            const stats = await chrome.storage.local.get(['completedCount', 'failedCount', 'isRunning', 'shortlinkCount', 'challengeCount']);
+            const stats = await chrome.storage.local.get(['completedCount', 'failedCount', 'isRunning', 'shortlinkCount', 'challengeCount', 'settings']);
             this.completedCount = stats.completedCount || 0;
             this.failedCount = stats.failedCount || 0;
             this.isRunning = stats.isRunning || false;
             this.shortlinkCount = stats.shortlinkCount || 0;
             this.challengeCount = stats.challengeCount || 0;
-            console.log(`Stats loaded: ${this.completedCount} completed, ${this.failedCount} failed, ${this.shortlinkCount} shortlinks, ${this.challengeCount} challenges, running: ${this.isRunning}`);
+            
+            // Load settings
+            if (stats.settings) {
+                this.challengeEnabled = stats.settings.enableChallenge !== false;
+            }
+            
+            console.log(`Stats loaded: ${this.completedCount} completed, ${this.failedCount} failed, ${this.shortlinkCount} shortlinks, ${this.challengeCount} challenges, running: ${this.isRunning}, challenge enabled: ${this.challengeEnabled}`);
             
             // If bot should be running but intervals are not set, restart them
             if (this.isRunning && !this.intervalId) {
@@ -154,6 +167,11 @@ class FaucetBotContent {
         } catch (error) {
             console.log('Could not load stats:', error);
         }
+    }
+    
+    updateSettings(settings) {
+        this.challengeEnabled = settings.enableChallenge !== false;
+        this.log(`Settings updated: challenge enabled = ${this.challengeEnabled}`, 'info');
     }
     
     async saveStats() {
@@ -270,8 +288,30 @@ class FaucetBotContent {
     
     // Check if daily challenge is available
     shouldCheckChallenge() {
+        if (!this.challengeEnabled) {
+            return false;
+        }
+        
         const now = Date.now();
-        return (now - this.lastChallengeCheck) > this.challengeCheckInterval;
+        const timeCheck = (now - this.lastChallengeCheck) > this.challengeCheckInterval;
+        
+        // Only check challenge when both conditions are met:
+        // 1. Time interval has passed
+        // 2. We have completed at least 30 faucet claims AND 20 shortlinks
+        const faucetRequirement = this.completedCount >= 30;
+        const shortlinkRequirement = this.shortlinkCount >= this.maxShortlinksBeforeChallenge;
+        
+        if (!timeCheck) {
+            this.log(`Challenge check: Time interval not reached (${Math.round((this.challengeCheckInterval - (now - this.lastChallengeCheck)) / 1000)}s remaining)`, 'info');
+        } else if (!faucetRequirement) {
+            this.log(`Challenge check: Faucet requirement not met (${this.completedCount}/30)`, 'info');
+        } else if (!shortlinkRequirement) {
+            this.log(`Challenge check: Shortlink requirement not met (${this.shortlinkCount}/${this.maxShortlinksBeforeChallenge})`, 'info');
+        } else {
+            this.log(`Challenge check: All requirements met! Faucet: ${this.completedCount}/30, Shortlinks: ${this.shortlinkCount}/${this.maxShortlinksBeforeChallenge}`, 'info');
+        }
+        
+        return timeCheck && faucetRequirement && shortlinkRequirement;
     }
     
     // Navigate to daily challenge page
@@ -553,7 +593,8 @@ class FaucetBotContent {
         
         // Check if daily challenge should be checked
         if (this.shouldCheckChallenge()) {
-            this.log('Checking daily challenge...', 'info');
+            this.log(`Daily challenge requirements met! Faucet: ${this.completedCount}/30, Shortlinks: ${this.shortlinkCount}/${this.maxShortlinksBeforeChallenge}`, 'info');
+            this.log('Navigating to daily challenge...', 'info');
             this.isProcessing = false;
             await this.navigateToChallenge();
             return;

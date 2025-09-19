@@ -1,0 +1,25 @@
+{
+  "version": "2.0.2",
+  "build": "2025-09-19",
+  "release": "stable",
+  "changelog": {
+    "major": 2,
+    "minor": 0,
+    "patch": 2,
+    "prerelease": null,
+    "buildmetadata": null
+  },
+  "features": [
+    "Modern UI Design",
+    "Enhanced Automation",
+    "22+ Cryptocurrency Support",
+    "AI-Powered Captcha Solving",
+    "Real-time Statistics",
+    "Smart Notifications",
+    "Advanced Settings"
+  ],
+  "compatibility": {
+    "chrome": "88+",
+    "manifest": "3"
+  }
+}
