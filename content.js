@@ -591,6 +591,10 @@ class FaucetBotContent {
         this.log(`Bot status: isRunning=${this.isRunning}, isProcessing=${this.isProcessing}`, 'info');
         this.log(`Completed: ${this.completedCount}, Shortlinks: ${this.shortlinkCount}, Challenges: ${this.challengeCount}`, 'info');
         
+        // Check if we're on the right page
+        const currentUrl = window.location.href;
+        this.log(`Current URL: ${currentUrl}`, 'info');
+        
         // Check if daily challenge should be checked
         if (this.shouldCheckChallenge()) {
             this.log(`Daily challenge requirements met! Faucet: ${this.completedCount}/30, Shortlinks: ${this.shortlinkCount}/${this.maxShortlinksBeforeChallenge}`, 'info');
@@ -615,7 +619,21 @@ class FaucetBotContent {
                 this.log(`Task type: ${typeof taskEl}`, 'info');
                 if (typeof taskEl === 'object' && taskEl.type) {
                     this.log(`Task object type: ${taskEl.type}`, 'info');
+                } else if (typeof taskEl === 'object' && taskEl.innerText) {
+                    this.log(`Task text: ${taskEl.innerText.substring(0, 100)}...`, 'info');
                 }
+            }
+            
+            // Debug: Log page content
+            this.log(`Page title: ${document.title}`, 'info');
+            this.log(`Page URL: ${currentUrl}`, 'info');
+            
+            // Check if page is fully loaded
+            if (document.readyState !== 'complete') {
+                this.log('Page not fully loaded, waiting...', 'warning');
+                this.isProcessing = false;
+                setTimeout(() => this.runTask(), 2000);
+                return;
             }
             
             // Handle cooldown page
@@ -676,9 +694,34 @@ class FaucetBotContent {
                         });
                     }, delayReward);
                 } else {
-                    this.log('No task or reward found, waiting...', 'info');
+                    this.log('No task or reward found, checking page state...', 'info');
+                    
+                    // Check if we need to refresh or navigate
+                    const pageContent = document.body.innerText.toLowerCase();
+                    if (pageContent.includes('error') || pageContent.includes('not found') || pageContent.includes('404')) {
+                        this.log('Page error detected, refreshing...', 'warning');
+                        this.isProcessing = false;
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 3000);
+                        return;
+                    }
+                    
+                    // Check if we're on wrong page
+                    if (!currentUrl.includes('/faucet/') && !currentUrl.includes('/shortlink/') && !currentUrl.includes('/challenge/')) {
+                        this.log('Not on faucet page, navigating to faucet...', 'info');
+                        this.isProcessing = false;
+                        const faucetUrl = `https://satoshifaucet.io/faucet/currency/${this.currentCurrency || 'btc'}`;
+                        window.location.href = faucetUrl;
+                        return;
+                    }
+                    
+                    this.log('No task available, waiting for next check...', 'info');
                     this.isProcessing = false;
-                    // Don't set timeout here, let contentCheckInterval handle it
+                    // Set a reasonable timeout to retry
+                    setTimeout(() => {
+                        this.runTask();
+                    }, 10000); // Wait 10 seconds before retry
                 }
                 return;
             }
@@ -798,7 +841,17 @@ class FaucetBotContent {
             
         } catch (error) {
             this.log(`Error in automation: ${error.message}`, 'error');
+            this.log(`Error stack: ${error.stack}`, 'error');
+            this.isProcessing = false;
             this.handleTaskFailure();
+            
+            // Don't get stuck in error loop
+            setTimeout(() => {
+                if (this.isRunning) {
+                    this.log('Retrying after error...', 'info');
+                    this.runTask();
+                }
+            }, 5000);
         }
     }
     

@@ -25,7 +25,7 @@ class FaucetBotPopup {
         this.logElement = document.getElementById('log');
         this.versionBadge = document.getElementById('versionBadge');
         this.checkUpdateBtn = document.getElementById('checkUpdateBtn');
-        this.updateStatus = document.getElementById('updateStatus');
+        this.updateStatusEl = document.getElementById('updateStatus');
         
         // Settings elements
         this.settingsModal = document.getElementById('settingsModal');
@@ -213,15 +213,15 @@ class FaucetBotPopup {
     }
     
     showUpdateStatus(message, type) {
-        if (this.updateStatus) {
-            this.updateStatus.textContent = message;
-            this.updateStatus.className = `update-status ${type}`;
-            this.updateStatus.style.display = 'block';
+        if (this.updateStatusEl) {
+            this.updateStatusEl.textContent = message;
+            this.updateStatusEl.className = `update-status ${type}`;
+            this.updateStatusEl.style.display = 'block';
             
             // Auto-hide after 5 seconds for success/info messages
             if (type === 'success' || type === 'info') {
                 setTimeout(() => {
-                    this.updateStatus.style.display = 'none';
+                    this.updateStatusEl.style.display = 'none';
                 }, 5000);
             }
         }
@@ -257,7 +257,7 @@ class FaucetBotPopup {
                     this.startBtn.disabled = this.isRunning;
                     this.stopBtn.disabled = !this.isRunning;
                     
-                    this.log(`Synced with content script: ${this.completedCount} completed, ${this.failedCount} failed, running: ${this.isRunning}`, 'info');
+                    this.log(`Synced with content script: ${this.completedCount} completed, ${this.failedCount} failed, ${this.shortlinkCount} shortlinks, ${this.challengeCount} challenges, running: ${this.isRunning}`, 'info');
                 }
             }
         } catch (error) {
@@ -346,6 +346,8 @@ class FaucetBotPopup {
         this.startBtn.disabled = true;
         this.stopBtn.disabled = false;
         
+        const selectedCurrency = this.currencySelect.value;
+        this.log(`Starting bot for ${selectedCurrency.toUpperCase()}...`, 'info');
         this.log('Bot started successfully!', 'success');
         
         // Send message to content script to start automation
@@ -355,6 +357,9 @@ class FaucetBotPopup {
         
         const trySendMessage = async () => {
             try {
+                this.log(`Attempting to send message to tab ${tab.id}...`, 'info');
+                this.log(`Tab URL: ${tab.url}`, 'info');
+                
                 await chrome.tabs.sendMessage(tab.id, {
                     action: 'startBot',
                     currency: this.currencySelect.value
@@ -362,11 +367,14 @@ class FaucetBotPopup {
                 this.log('Message sent to content script successfully!', 'success');
             } catch (error) {
                 retryCount++;
+                this.log(`Send message error: ${error.message}`, 'error');
+                
                 if (retryCount < maxRetries) {
                     this.log(`Content script not ready, retry ${retryCount}/${maxRetries}...`, 'warning');
                     setTimeout(trySendMessage, 2000);
                 } else {
                     this.log('Failed to connect to content script after multiple retries', 'error');
+                    this.log('Make sure you are on Satoshi Faucet website!', 'error');
                     this.isRunning = false;
                     this.updateStatus('stopped', 'Bot Stopped');
                     this.startBtn.disabled = false;
@@ -428,6 +436,37 @@ class FaucetBotPopup {
                 await this.showNotification('❌ Task Failed', `Task failed! Total failed: ${this.failedCount}`, 'error');
                 break;
                 
+            case 'shortlinkCompleted':
+                this.shortlinkCount++;
+                this.updateStats();
+                this.saveStats();
+                this.log(`Shortlink completed! Total: ${this.shortlinkCount}`, 'success');
+                await this.showNotification('🔗 Shortlink Completed', `Shortlink completed! Total: ${this.shortlinkCount}`, 'success');
+                break;
+                
+            case 'challengeCompleted':
+                this.challengeCount++;
+                this.updateStats();
+                this.saveStats();
+                this.log(`Challenge completed! Total: ${this.challengeCount}`, 'success');
+                await this.showNotification('🏆 Challenge Completed', `Challenge completed! Total: ${this.challengeCount}`, 'success');
+                break;
+                
+            case 'statsUpdate':
+                // Update all stats from content script
+                if (message.completedCount !== undefined) this.completedCount = message.completedCount;
+                if (message.failedCount !== undefined) this.failedCount = message.failedCount;
+                if (message.shortlinkCount !== undefined) this.shortlinkCount = message.shortlinkCount;
+                if (message.challengeCount !== undefined) this.challengeCount = message.challengeCount;
+                if (message.isRunning !== undefined) this.isRunning = message.isRunning;
+                
+                this.updateStats();
+                this.updateStatus(this.isRunning ? 'running' : 'stopped', 
+                                this.isRunning ? 'Bot Running' : 'Bot Stopped');
+                this.startBtn.disabled = this.isRunning;
+                this.stopBtn.disabled = !this.isRunning;
+                break;
+                
             case 'log':
                 this.log(message.message, message.level);
                 break;
@@ -444,6 +483,8 @@ class FaucetBotPopup {
             if (response) {
                 this.completedCount = response.completedCount || this.completedCount;
                 this.failedCount = response.failedCount || this.failedCount;
+                this.shortlinkCount = response.shortlinkCount || this.shortlinkCount;
+                this.challengeCount = response.challengeCount || this.challengeCount;
                 this.isRunning = response.isRunning || this.isRunning;
                 
                 this.updateStats();
@@ -453,7 +494,7 @@ class FaucetBotPopup {
                 this.stopBtn.disabled = !this.isRunning;
                 
                 const lastUpdated = new Date(response.lastUpdated).toLocaleTimeString();
-                this.log(`Stats synced: ${this.completedCount} completed, ${this.failedCount} failed, running: ${this.isRunning} (updated: ${lastUpdated})`, 'info');
+                this.log(`Stats synced: ${this.completedCount} completed, ${this.failedCount} failed, ${this.shortlinkCount} shortlinks, ${this.challengeCount} challenges, running: ${this.isRunning} (updated: ${lastUpdated})`, 'info');
             } else {
                 // Fallback to storage
                 await this.loadStats();
@@ -631,6 +672,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         // Update stats from background script
         bot.completedCount = message.completedCount || 0;
         bot.failedCount = message.failedCount || 0;
+        bot.shortlinkCount = message.shortlinkCount || 0;
+        bot.challengeCount = message.challengeCount || 0;
         bot.isRunning = message.isRunning || false;
         
         bot.updateStats();
@@ -643,7 +686,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         const now = Date.now();
         if (now - lastUpdateTime > UPDATE_THROTTLE) {
             const lastUpdated = new Date(message.lastUpdated).toLocaleTimeString();
-            bot.log(`Real-time update: ${bot.completedCount} completed, ${bot.failedCount} failed, running: ${bot.isRunning} (${lastUpdated})`, 'info');
+            bot.log(`Real-time update: ${bot.completedCount} completed, ${bot.failedCount} failed, ${bot.shortlinkCount} shortlinks, ${bot.challengeCount} challenges, running: ${bot.isRunning} (${lastUpdated})`, 'info');
             lastUpdateTime = now;
         }
     } else {
