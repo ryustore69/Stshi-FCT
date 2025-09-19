@@ -677,7 +677,13 @@ class FaucetBotContent {
                             this.completedCount++;
                             this.saveStats();
                             this.log(`Task completed! Total: ${this.completedCount}`, 'success');
-                            chrome.runtime.sendMessage({ type: 'taskCompleted' });
+                            chrome.runtime.sendMessage({ 
+                                type: 'taskCompleted',
+                                completedCount: this.completedCount,
+                                failedCount: this.failedCount,
+                                shortlinkCount: this.shortlinkCount,
+                                challengeCount: this.challengeCount
+                            });
                             this.isProcessing = false;
                             
                             // Continue automation after verification
@@ -800,7 +806,13 @@ class FaucetBotContent {
                                     this.completedCount++;
                                     this.saveStats();
                                     this.log(`Task completed! Total: ${this.completedCount}`, 'success');
-                                    chrome.runtime.sendMessage({ type: 'taskCompleted' });
+                                    chrome.runtime.sendMessage({ 
+                                type: 'taskCompleted',
+                                completedCount: this.completedCount,
+                                failedCount: this.failedCount,
+                                shortlinkCount: this.shortlinkCount,
+                                challengeCount: this.challengeCount
+                            });
                                     this.isProcessing = false;
                                     
                                     // Auto-save stats every completion
@@ -861,7 +873,13 @@ class FaucetBotContent {
         this.saveStats();
         
         this.log(`Task failed! Retry ${this.retryCount}/${this.maxRetries}`, 'error');
-        chrome.runtime.sendMessage({ type: 'taskFailed' });
+        chrome.runtime.sendMessage({ 
+            type: 'taskFailed',
+            completedCount: this.completedCount,
+            failedCount: this.failedCount,
+            shortlinkCount: this.shortlinkCount,
+            challengeCount: this.challengeCount
+        });
         
         if (this.retryCount >= this.maxRetries) {
             this.log('Max retries reached, stopping bot', 'error');

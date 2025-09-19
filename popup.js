@@ -421,7 +421,16 @@ class FaucetBotPopup {
     async handleMessage(message) {
         switch (message.type) {
             case 'taskCompleted':
-                this.completedCount++;
+                // Use data from content script if available, otherwise increment
+                if (message.completedCount !== undefined) {
+                    this.completedCount = message.completedCount;
+                } else {
+                    this.completedCount++;
+                }
+                if (message.failedCount !== undefined) this.failedCount = message.failedCount;
+                if (message.shortlinkCount !== undefined) this.shortlinkCount = message.shortlinkCount;
+                if (message.challengeCount !== undefined) this.challengeCount = message.challengeCount;
+                
                 this.updateStats();
                 this.saveStats();
                 this.log(`Task completed! Total: ${this.completedCount}`, 'success');
@@ -429,7 +438,16 @@ class FaucetBotPopup {
                 break;
                 
             case 'taskFailed':
-                this.failedCount++;
+                // Use data from content script if available, otherwise increment
+                if (message.failedCount !== undefined) {
+                    this.failedCount = message.failedCount;
+                } else {
+                    this.failedCount++;
+                }
+                if (message.completedCount !== undefined) this.completedCount = message.completedCount;
+                if (message.shortlinkCount !== undefined) this.shortlinkCount = message.shortlinkCount;
+                if (message.challengeCount !== undefined) this.challengeCount = message.challengeCount;
+                
                 this.updateStats();
                 this.saveStats();
                 this.log(`Task failed! Total failed: ${this.failedCount}`, 'error');
@@ -668,6 +686,8 @@ const UPDATE_THROTTLE = 5000; // 5 seconds
 
 // Listen for messages from content script and background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Popup received message:', message); // Debug log
+    
     if (message.type === 'globalStatsUpdate') {
         // Update stats from background script
         bot.completedCount = message.completedCount || 0;
@@ -690,6 +710,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             lastUpdateTime = now;
         }
     } else {
+        // Handle direct messages from content script
         bot.handleMessage(message);
     }
 });
