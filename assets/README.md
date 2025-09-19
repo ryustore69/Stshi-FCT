@@ -1,35 +1,34 @@
-# 📁 Assets Directory
+# 🎨 Assets
 
-This directory contains all static assets for the Satoshi Faucet Bot Chrome Extension.
+This directory contains static assets for the Satoshi Faucet Bot Chrome Extension.
 
-## 📂 Directory Structure
+## 📁 **Directory Structure**
 
 ```
 assets/
-├── icons/           # Extension icons (16x16, 32x32, 48x48, 128x128)
-├── screenshots/     # Screenshots for documentation
-└── README.md       # This file
+├── screenshots/     # 📸 Extension screenshots
+└── README.md       # 📝 This file
 ```
 
-## 🎨 Icons
+## 📸 **Screenshots**
 
-The `icons/` directory should contain the following icon files:
+The `screenshots/` directory contains:
+- **Screenshot1.png** - Main extension interface showing the popup with statistics and controls
 
-- `icon16.png` - 16x16 pixels (toolbar icon)
-- `icon32.png` - 32x32 pixels (extension management)
-- `icon48.png` - 48x48 pixels (extension details)
-- `icon128.png` - 128x128 pixels (Chrome Web Store)
+## 🎨 **Icon Assets**
 
-## 📸 Screenshots
+Icons are not included in this repository but can be generated using:
+- **Icon Generator**: `scripts/create-icons.html`
+- **Manual Creation**: Create 16x16, 32x32, 48x48, and 128x128 PNG files
+- **Placement**: Put icons in `assets/icons/` directory
 
-The `screenshots/` directory contains screenshots used in documentation:
+## 📝 **Usage**
 
-- `Screenshot1.png` - Main extension interface
-- Additional screenshots can be added here
+These assets are used in:
+- **README.md** - Screenshots for documentation
+- **GitHub Releases** - Visual representation of the extension
+- **Chrome Web Store** - Store listing images (future)
 
-## 📝 Notes
+---
 
-- All icons should be in PNG format
-- Icons should have transparent backgrounds
-- Screenshots should be high quality and representative of the extension
-- Keep file sizes optimized for web use
+**Note**: Keep assets optimized for web use to ensure fast loading times.

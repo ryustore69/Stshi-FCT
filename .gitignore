@@ -211,5 +211,5 @@ exports/
 
 # Version management (keep these files)
 !version.json
-!update-version.js
-!VERSIONING.md
+!scripts/update-version.js
+!docs/VERSIONING.md
