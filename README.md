@@ -32,7 +32,58 @@ Satoshi Faucet Bot is a powerful Chrome extension that **automates cryptocurrenc
 <div align="center">
 
 ![Extension Interface](assets/screenshots/Screenshot1.png)
-*Modern, clean interface with real-time statistics and easy controls*
+
+**Modern, clean interface with real-time statistics and easy controls**
+
+</div>
+
+---
+
+## 🔄 **How It Works**
+
+<div align="center">
+
+```mermaid
+graph TD
+    A[🚀 Start Bot] --> B[🔍 Check Page]
+    B --> C{📄 Page Type?}
+    
+    C -->|Faucet Page| D[💰 Claim Faucet]
+    C -->|Shortlink Page| E[🔗 Complete Shortlink]
+    C -->|Challenge Page| F[🎯 Solve Challenge]
+    
+    D --> G[🤖 Solve Emoji Captcha]
+    E --> H[⏱️ Wait Timer]
+    F --> I[🧩 Complete Challenge]
+    
+    G --> J{✅ Success?}
+    H --> K[📊 Update Stats]
+    I --> K
+    
+    J -->|Yes| L[💰 Earn Crypto]
+    J -->|No| M[🔄 Retry]
+    
+    L --> N[📈 Update Counter]
+    M --> G
+    
+    N --> O{🎯 Challenge Ready?}
+    O -->|Yes| P[🏆 Start Challenge]
+    O -->|No| Q[⏳ Wait & Repeat]
+    
+    P --> K
+    Q --> B
+    
+    K --> R[💾 Save Progress]
+    R --> S[🔄 Continue Loop]
+    S --> B
+    
+    style A fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style L fill:#2196F3,stroke:#1565C0,color:#fff
+    style K fill:#FF9800,stroke:#E65100,color:#fff
+    style R fill:#9C27B0,stroke:#6A1B9A,color:#fff
+```
+
+**🤖 Fully automated workflow with AI-powered captcha solving**
 
 </div>
 
