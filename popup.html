@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            width: 400px;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .currency-selector {
+            margin-bottom: 15px;
+        }
+        
+        .currency-selector label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .currency-selector select {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 5px;
+            background: white;
+            color: #333;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+            flex: 0 0 40px;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        
+        .status.running {
+            background: rgba(40, 167, 69, 0.3);
+            border: 1px solid #28a745;
+        }
+        
+        .status.stopped {
+            background: rgba(220, 53, 69, 0.3);
+            border: 1px solid #dc3545;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .log {
+            max-height: 150px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            padding: 10px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        
+        .log-entry.success {
+            color: #28a745;
+        }
+        
+        .log-entry.error {
+            color: #dc3545;
+        }
+        
+        .log-entry.info {
+            color: #17a2b8;
+        }
+        
+        .log-entry.warning {
+            color: #ffc107;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            color: white;
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+        
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            opacity: 0.7;
+        }
+        
+        .modal-body {
+            padding: 20px;
+        }
+        
+        .setting-item {
+            margin-bottom: 15px;
+        }
+        
+        .setting-item label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .setting-item input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .setting-item button {
+            margin-right: 10px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Satoshi Faucet Bot</h1>
+    </div>
+    
+    <div class="currency-selector">
+        <label for="currencySelect">Select Currency:</label>
+        <select id="currencySelect">
+            <option value="btc">Bitcoin (BTC)</option>
+            <option value="ltc">Litecoin (LTC)</option>
+            <option value="doge">Dogecoin (DOGE)</option>
+            <option value="bch">Bitcoin Cash (BCH)</option>
+            <option value="eth">Ethereum (ETH)</option>
+            <option value="trx">Tron (TRX)</option>
+            <option value="ada">Cardano (ADA)</option>
+            <option value="dot">Polkadot (DOT)</option>
+            <option value="link">Chainlink (LINK)</option>
+            <option value="xlm">Stellar (XLM)</option>
+        </select>
+    </div>
+    
+    <div class="controls">
+        <button id="startBtn" class="btn btn-primary">Start Bot</button>
+        <button id="stopBtn" class="btn btn-danger" disabled>Stop Bot</button>
+        <button id="settingsBtn" class="btn btn-secondary">⚙️</button>
+    </div>
+    
+    <div id="status" class="status stopped">
+        Bot Stopped
+    </div>
+    
+    <div class="stats">
+        <div class="stat">
+            <div id="completedCount" class="stat-value">0</div>
+            <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat">
+            <div id="failedCount" class="stat-value">0</div>
+            <div class="stat-label">Failed</div>
+        </div>
+        <div class="stat">
+            <div id="shortlinkCount" class="stat-value">0</div>
+            <div class="stat-label">Shortlinks</div>
+        </div>
+        <div class="stat">
+            <div id="challengeCount" class="stat-value">0</div>
+            <div class="stat-label">Challenges</div>
+        </div>
+    </div>
+    
+    <div class="log" id="log">
+        <div class="log-entry info">Ready to start automation!</div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Settings</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="enableNotifications" checked>
+                        Enable Desktop Notifications
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="detailedLogs">
+                        Detailed Logs (Developer Mode)
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="autoSaveLogs">
+                        Auto-save Logs to File
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <button id="exportLogs" class="btn btn-primary">Export Logs</button>
+                    <button id="clearLogs" class="btn btn-danger">Clear Logs</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

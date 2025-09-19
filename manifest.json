@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Satoshi Faucet Bot",
+  "version": "1.0.0",
+  "description": "Automated bot for Satoshi Faucet with full automation",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://satoshifaucet.io/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Satoshi Faucet Bot"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://satoshifaucet.io/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["injected.js"],
+      "matches": ["https://satoshifaucet.io/*"]
+    }
+  ]
+}
