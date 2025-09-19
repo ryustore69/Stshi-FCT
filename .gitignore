@@ -206,6 +206,7 @@ Temporary Items
 
 # Project specific
 screenshots/
+!assets/screenshots/
 logs/
 exports/
 
