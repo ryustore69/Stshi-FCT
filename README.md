@@ -1,73 +1,208 @@
-# Satoshi Faucet Bot - Chrome Extension
+# 🤖 Satoshi Faucet Bot - Chrome Extension
 
-Automated bot for Satoshi Faucet with full automation including faucet claims, shortlinks, and daily challenges.
+<div align="center">
 
-## Features
+![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue?style=for-the-badge&logo=google-chrome)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.0-orange?style=for-the-badge)
 
-- ✅ **Auto Faucet Claims** - Automated emoji captcha solving
-- ✅ **Auto Shortlinks** - Handles shortlink requirements every 30 claims
-- ✅ **Auto Daily Challenges** - Checks and completes daily challenges every 5 minutes
-- ✅ **Multi-Currency Support** - BTC, LTC, DOGE, ETH, and more
-- ✅ **Desktop Notifications** - Get notified of successful completions
-- ✅ **Settings Panel** - Detailed logs, auto-save, export/clear logs
-- ✅ **Stats Tracking** - Real-time tracking of completed, failed, shortlinks, and challenges
-- ✅ **State Persistence** - Stats and settings persist across sessions
+**Automated bot for Satoshi Faucet with full automation including faucet claims, shortlinks, and daily challenges.**
 
-## Installation
+[📖 Installation Guide](INSTALL.md) • [✨ Features](FEATURES.md) • [🐛 Report Bug](https://github.com/YOUR_USERNAME/satoshi-faucet-bot/issues) • [💡 Request Feature](https://github.com/YOUR_USERNAME/satoshi-faucet-bot/issues)
 
-1. Download or clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode" in the top right
-4. Click "Load unpacked" and select the folder containing the extension files
-5. The extension icon should appear in your Chrome toolbar
+</div>
 
-## Usage
+---
 
-1. Go to [Satoshi Faucet](https://satoshifaucet.io) and log in
-2. Click the extension icon in your Chrome toolbar
-3. Select your preferred currency
-4. Click "Start Bot" to begin automation
-5. The bot will automatically:
-   - Complete faucet claims with emoji captcha
-   - Handle shortlink requirements every 30 claims
-   - Check and complete daily challenges every 5 minutes
-   - Show desktop notifications for completions
+## 🚀 **Quick Start**
 
-## Files
+1. **Download** this repository
+2. **Install** the extension in Chrome (see [Installation Guide](INSTALL.md))
+3. **Login** to [Satoshi Faucet](https://satoshifaucet.io)
+4. **Start** the bot and let it work automatically!
 
-- `manifest.json` - Extension configuration
-- `popup.html` - Extension popup interface
-- `popup.js` - Popup logic and UI handling
-- `content.js` - Main automation script
-- `background.js` - Background service worker
+## ✨ **Key Features**
 
-## Settings
+<table>
+<tr>
+<td width="50%">
 
-Click the ⚙️ button in the popup to access:
+### 🤖 **Full Automation**
+- ✅ Auto faucet claims with emoji captcha
+- ✅ Auto shortlinks every 30 claims  
+- ✅ Auto daily challenges every 5 minutes
+- ✅ Human-like delays and behavior
+
+</td>
+<td width="50%">
+
+### 💰 **Multi-Currency Support**
+- ✅ BTC, LTC, DOGE, ETH
+- ✅ USDT, TRX, BNB, SOL
+- ✅ DASH, DGB, XRP, USDC
+- ✅ And 15+ more cryptocurrencies
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### 📊 **Real-time Stats**
+- ✅ Completed faucet claims
+- ✅ Failed attempts tracking
+- ✅ Shortlinks completed
+- ✅ Daily challenges completed
+
+</td>
+<td width="50%">
+
+### 🔔 **Smart Notifications**
+- ✅ Desktop notifications
+- ✅ Success/failure alerts
+- ✅ Customizable settings
+- ✅ Detailed logging system
+
+</td>
+</tr>
+</table>
+
+## 🎯 **How It Works**
+
+```mermaid
+graph TD
+    A[Start Bot] --> B[Check Daily Challenge]
+    B --> C{Challenge Available?}
+    C -->|Yes| D[Complete Challenge]
+    C -->|No| E[Check Shortlink Requirement]
+    D --> E
+    E --> F{Need Shortlink?}
+    F -->|Yes| G[Complete Shortlink]
+    F -->|No| H[Complete Faucet Claim]
+    G --> H
+    H --> I[Update Stats]
+    I --> J[Wait & Repeat]
+    J --> B
+```
+
+## 📱 **Screenshots**
+
+<div align="center">
+
+### Extension Popup
+![Extension Popup](https://via.placeholder.com/400x300/667eea/ffffff?text=Extension+Popup)
+
+### Settings Panel
+![Settings Panel](https://via.placeholder.com/400x300/764ba2/ffffff?text=Settings+Panel)
+
+### Desktop Notifications
+![Notifications](https://via.placeholder.com/400x200/28a745/ffffff?text=Desktop+Notifications)
+
+</div>
+
+## 🛠️ **Installation**
+
+### **Method 1: Direct Download**
+1. Click the **"Code"** button → **"Download ZIP"**
+2. Extract the ZIP file
+3. Follow the [Installation Guide](INSTALL.md)
+
+### **Method 2: Git Clone**
+```bash
+git clone https://github.com/YOUR_USERNAME/satoshi-faucet-bot.git
+cd satoshi-faucet-bot
+```
+
+## 📋 **Requirements**
+
+- 🌐 **Chrome Browser** (or Chromium-based browsers)
+- 🔗 **Internet Connection**
+- 👤 **Satoshi Faucet Account**
+- 💻 **Windows/Mac/Linux**
+
+## ⚙️ **Configuration**
+
+### **Basic Settings**
+- Select your preferred cryptocurrency
 - Enable/disable desktop notifications
-- Detailed logs (Developer Mode)
+- Choose logging level (Simple/Detailed)
+
+### **Advanced Settings**
 - Auto-save logs to file
-- Export logs
-- Clear logs
+- Export logs for debugging
+- Clear logs history
+- Developer mode for detailed logging
 
-## Stats
+## 📊 **Statistics Tracking**
 
-The extension tracks:
-- **Completed** - Successful faucet claims
-- **Failed** - Failed attempts
-- **Shortlinks** - Completed shortlinks
-- **Challenges** - Completed daily challenges
+The bot automatically tracks:
 
-## Requirements
+| Metric | Description |
+|--------|-------------|
+| **Completed** | Successful faucet claims |
+| **Failed** | Failed attempts (with retry logic) |
+| **Shortlinks** | Completed shortlink tasks |
+| **Challenges** | Completed daily challenges |
 
-- Chrome browser
-- Active internet connection
-- Satoshi Faucet account
+## 🔄 **Automation Flow**
 
-## Disclaimer
+1. **Daily Challenge Check** (every 5 minutes)
+2. **Shortlink Requirement** (every 30 faucet claims)
+3. **Normal Faucet Tasks** (continuous)
+4. **Stats Update** (real-time)
+5. **Notification** (on completion/failure)
 
-This extension is for educational purposes only. Use at your own risk and in accordance with Satoshi Faucet's terms of service.
+## 🛡️ **Security & Privacy**
 
-## License
+- 🔒 **No Data Collection** - Extension doesn't collect personal data
+- 💾 **Local Storage Only** - All data stored locally in browser
+- 🌐 **No External Requests** - No data sent to external servers
+- 🔓 **Open Source** - Full source code available for review
 
-MIT License - Feel free to modify and distribute.
+## 🐛 **Troubleshooting**
+
+### **Common Issues**
+
+| Problem | Solution |
+|---------|----------|
+| Extension not loading | Enable Developer mode in Chrome |
+| Bot not working | Check if logged into Satoshi Faucet |
+| Stats not updating | Refresh the page and restart bot |
+| Notifications not showing | Check notification permissions |
+
+### **Get Help**
+- 📖 Check the [Installation Guide](INSTALL.md)
+- 🐛 [Report a Bug](https://github.com/YOUR_USERNAME/satoshi-faucet-bot/issues)
+- 💡 [Request a Feature](https://github.com/YOUR_USERNAME/satoshi-faucet-bot/issues)
+- 💬 [Join Discussions](https://github.com/YOUR_USERNAME/satoshi-faucet-bot/discussions)
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## ⚠️ **Disclaimer**
+
+This extension is for **educational purposes only**. Use at your own risk and in accordance with Satoshi Faucet's terms of service. The developers are not responsible for any account suspensions or losses.
+
+## 🤝 **Contributing**
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## ⭐ **Support**
+
+If you found this project helpful, please give it a ⭐ star on GitHub!
+
+---
+
+<div align="center">
+
+**Made with ❤️ for the crypto community**
+
+[⬆ Back to Top](#-satoshi-faucet-bot---chrome-extension)
+
+</div>
