@@ -10,6 +10,9 @@ class FaucetBotPopup {
         this.setupEventListeners();
         this.loadStats();
         this.loadVersion();
+        
+        // Set up periodic stats refresh
+        this.setupStatsRefresh();
     }
     
     initializeElements() {
@@ -43,6 +46,15 @@ class FaucetBotPopup {
         this.stopBtn.addEventListener('click', () => this.stop());
         this.settingsBtn.addEventListener('click', () => this.openSettings());
         this.checkUpdateBtn.addEventListener('click', () => this.checkForUpdate());
+        
+        // Add manual refresh for testing
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
+                e.preventDefault();
+                this.refreshStats();
+                this.log('Manual stats refresh triggered', 'info');
+            }
+        });
         
         // Save currency when changed
         this.currencySelect.addEventListener('change', () => {
@@ -102,6 +114,9 @@ class FaucetBotPopup {
                 const lastSaved = new Date(stats.lastSaved).toLocaleTimeString();
                 this.log(`Stats loaded: ${this.completedCount} completed, ${this.failedCount} failed, running: ${this.isRunning} (saved: ${lastSaved})`, 'info');
             }
+            
+            // Always try to sync with content script for latest stats
+            await this.syncWithContentScript();
         } catch (error) {
             this.log('Could not load stats', 'error');
         }
@@ -124,6 +139,14 @@ class FaucetBotPopup {
                 this.versionBadge.textContent = 'v2.0.0'; // fallback
             }
         }
+    }
+    
+    setupStatsRefresh() {
+        // Refresh stats every 2 seconds to ensure we have latest data
+        setInterval(async () => {
+            console.log('Periodic stats refresh...');
+            await this.refreshStats();
+        }, 2000);
     }
     
     async checkForUpdate() {
@@ -419,6 +442,7 @@ class FaucetBotPopup {
     }
     
     async handleMessage(message) {
+        console.log('handleMessage called with:', message); // Debug log
         switch (message.type) {
             case 'taskCompleted':
                 // Use data from content script if available, otherwise increment
@@ -493,7 +517,28 @@ class FaucetBotPopup {
     
     async refreshStats() {
         try {
-            // First try to sync with content script (most accurate)
+            // First check storage directly
+            const storageStats = await chrome.storage.local.get(['completedCount', 'failedCount', 'shortlinkCount', 'challengeCount', 'isRunning', 'lastSaved']);
+            if (storageStats.completedCount !== undefined) {
+                const oldCompleted = this.completedCount;
+                this.completedCount = storageStats.completedCount;
+                this.failedCount = storageStats.failedCount || this.failedCount;
+                this.shortlinkCount = storageStats.shortlinkCount || this.shortlinkCount;
+                this.challengeCount = storageStats.challengeCount || this.challengeCount;
+                this.isRunning = storageStats.isRunning || this.isRunning;
+                
+                this.updateStats();
+                this.updateStatus(this.isRunning ? 'running' : 'stopped', 
+                                this.isRunning ? 'Bot Running' : 'Bot Stopped');
+                this.startBtn.disabled = this.isRunning;
+                this.stopBtn.disabled = !this.isRunning;
+                
+                if (oldCompleted !== this.completedCount) {
+                    this.log(`Stats updated from storage: ${this.completedCount} completed (was ${oldCompleted})`, 'success');
+                }
+            }
+            
+            // Then try to sync with content script (most accurate)
             await this.syncWithContentScript();
             
             // Then get stats from background script as backup
@@ -513,9 +558,6 @@ class FaucetBotPopup {
                 
                 const lastUpdated = new Date(response.lastUpdated).toLocaleTimeString();
                 this.log(`Stats synced: ${this.completedCount} completed, ${this.failedCount} failed, ${this.shortlinkCount} shortlinks, ${this.challengeCount} challenges, running: ${this.isRunning} (updated: ${lastUpdated})`, 'info');
-            } else {
-                // Fallback to storage
-                await this.loadStats();
             }
         } catch (error) {
             this.log('Could not refresh stats, using storage', 'warning');
@@ -686,7 +728,7 @@ const UPDATE_THROTTLE = 5000; // 5 seconds
 
 // Listen for messages from content script and background
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Popup received message:', message); // Debug log
+    console.log('Popup received message:', message, 'from sender:', sender); // Debug log
     
     if (message.type === 'globalStatsUpdate') {
         // Update stats from background script

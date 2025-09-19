@@ -52,6 +52,31 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     } else if (message.type === 'getGlobalStats') {
         // Return current global stats
         sendResponse(globalStats);
+    } else if (message.type === 'taskCompleted' || message.type === 'taskFailed') {
+        // Handle task completion/failure messages
+        console.log('Background received:', message);
+        
+        // Update global stats
+        if (message.completedCount !== undefined) globalStats.completedCount = message.completedCount;
+        if (message.failedCount !== undefined) globalStats.failedCount = message.failedCount;
+        if (message.shortlinkCount !== undefined) globalStats.shortlinkCount = message.shortlinkCount;
+        if (message.challengeCount !== undefined) globalStats.challengeCount = message.challengeCount;
+        globalStats.lastUpdated = Date.now();
+        
+        // Save to storage
+        chrome.storage.local.set({
+            completedCount: globalStats.completedCount,
+            failedCount: globalStats.failedCount,
+            shortlinkCount: globalStats.shortlinkCount,
+            challengeCount: globalStats.challengeCount,
+            isRunning: globalStats.isRunning,
+            lastUpdated: globalStats.lastUpdated
+        });
+        
+        // Forward to popup
+        chrome.runtime.sendMessage(message);
+        
+        sendResponse({ success: true });
     } else if (sender.tab) {
         // Forward other messages from content script
         chrome.runtime.sendMessage(message);

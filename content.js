@@ -101,8 +101,15 @@ class FaucetBotContent {
                     if (Math.random() < 0.1) { // 10% chance to log
                         this.log('Bot is processing, waiting...', 'info');
                     }
+                } else if (!this.isRunning && this.contentCheckInterval) {
+                    // Bot stopped, clear intervals
+                    clearInterval(this.contentCheckInterval);
+                    clearInterval(this.pageRefreshInterval);
+                    clearInterval(this.emergencyInterval);
+                    this.contentCheckInterval = null;
+                    this.pageRefreshInterval = null;
+                    this.emergencyInterval = null;
                 }
-                // Remove the "Bot not running" log to reduce spam
             });
         }, 3000);
         
@@ -137,8 +144,15 @@ class FaucetBotContent {
                         this.isProcessing = false;
                         setTimeout(() => this.runTask(), 2000);
                     }
+                } else if (!this.isRunning && this.emergencyInterval) {
+                    // Bot stopped, clear intervals
+                    clearInterval(this.contentCheckInterval);
+                    clearInterval(this.pageRefreshInterval);
+                    clearInterval(this.emergencyInterval);
+                    this.contentCheckInterval = null;
+                    this.pageRefreshInterval = null;
+                    this.emergencyInterval = null;
                 }
-                // Remove the "Bot not running in storage" log to reduce spam
             });
         }, 10000);
     }
@@ -674,16 +688,34 @@ class FaucetBotContent {
                         
                         // Wait for verification like your 6.0.js
                         this.waitForVerification(60000).then(() => {
+                            // Increment counter after verification
                             this.completedCount++;
                             this.saveStats();
                             this.log(`Task completed! Total: ${this.completedCount}`, 'success');
-                            chrome.runtime.sendMessage({ 
+                            const message = { 
                                 type: 'taskCompleted',
                                 completedCount: this.completedCount,
                                 failedCount: this.failedCount,
                                 shortlinkCount: this.shortlinkCount,
                                 challengeCount: this.challengeCount
+                            };
+                            console.log('Content script sending taskCompleted message:', message);
+                            
+                            // Send to background script first
+                            chrome.runtime.sendMessage(message, (response) => {
+                                console.log('Content script received response:', response);
                             });
+                            
+                            // Also send stats update
+                            chrome.runtime.sendMessage({
+                                type: 'statsUpdate',
+                                completedCount: this.completedCount,
+                                failedCount: this.failedCount,
+                                shortlinkCount: this.shortlinkCount,
+                                challengeCount: this.challengeCount,
+                                isRunning: this.isRunning
+                            });
+                            
                             this.isProcessing = false;
                             
                             // Continue automation after verification
@@ -713,11 +745,13 @@ class FaucetBotContent {
                         return;
                     }
                     
-                    // Check if we're on wrong page
-                    if (!currentUrl.includes('/faucet/') && !currentUrl.includes('/shortlink/') && !currentUrl.includes('/challenge/')) {
-                        this.log('Not on faucet page, navigating to faucet...', 'info');
+                    // Check if we're on wrong page or URL is incomplete
+                    if (!currentUrl.includes('/faucet/') && !currentUrl.includes('/shortlink/') && !currentUrl.includes('/challenge/') || 
+                        currentUrl.endsWith('/faucet/currency/') || currentUrl.endsWith('/faucet/currency')) {
+                        this.log('Not on valid faucet page, navigating to faucet...', 'info');
                         this.isProcessing = false;
                         const faucetUrl = `https://satoshifaucet.io/faucet/currency/${this.currentCurrency || 'btc'}`;
+                        this.log(`Navigating to: ${faucetUrl}`, 'info');
                         window.location.href = faucetUrl;
                         return;
                     }
@@ -802,18 +836,37 @@ class FaucetBotContent {
                                 rewardBtn.click();
                                 this.log('Reward clicked ✅', 'success');
                                 
+                                // Increment counter immediately when reward is clicked
+                                this.completedCount++;
+                                this.saveStats();
+                                this.log(`Task completed! Total: ${this.completedCount}`, 'success');
+                                
                                 setTimeout(() => {
-                                    this.completedCount++;
-                                    this.saveStats();
-                                    this.log(`Task completed! Total: ${this.completedCount}`, 'success');
-                                    chrome.runtime.sendMessage({ 
+                                    const message = { 
                                 type: 'taskCompleted',
                                 completedCount: this.completedCount,
                                 failedCount: this.failedCount,
                                 shortlinkCount: this.shortlinkCount,
                                 challengeCount: this.challengeCount
+                            };
+                            console.log('Content script sending taskCompleted message:', message);
+                            
+                            // Send to background script first
+                            chrome.runtime.sendMessage(message, (response) => {
+                                console.log('Content script received response:', response);
                             });
-                                    this.isProcessing = false;
+                            
+                            // Also send stats update
+                            chrome.runtime.sendMessage({
+                                type: 'statsUpdate',
+                                completedCount: this.completedCount,
+                                failedCount: this.failedCount,
+                                shortlinkCount: this.shortlinkCount,
+                                challengeCount: this.challengeCount,
+                                isRunning: this.isRunning
+                            });
+                            
+                            this.isProcessing = false;
                                     
                                     // Auto-save stats every completion
                                     setTimeout(() => this.saveStats(), 1000);
@@ -873,12 +926,28 @@ class FaucetBotContent {
         this.saveStats();
         
         this.log(`Task failed! Retry ${this.retryCount}/${this.maxRetries}`, 'error');
-        chrome.runtime.sendMessage({ 
+        const message = { 
             type: 'taskFailed',
             completedCount: this.completedCount,
             failedCount: this.failedCount,
             shortlinkCount: this.shortlinkCount,
             challengeCount: this.challengeCount
+        };
+        console.log('Content script sending taskFailed message:', message);
+        
+        // Send to background script first
+        chrome.runtime.sendMessage(message, (response) => {
+            console.log('Content script received response:', response);
+        });
+        
+        // Also send stats update
+        chrome.runtime.sendMessage({
+            type: 'statsUpdate',
+            completedCount: this.completedCount,
+            failedCount: this.failedCount,
+            shortlinkCount: this.shortlinkCount,
+            challengeCount: this.challengeCount,
+            isRunning: this.isRunning
         });
         
         if (this.retryCount >= this.maxRetries) {
